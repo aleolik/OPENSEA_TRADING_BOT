@@ -8,8 +8,7 @@ from web3 import Web3
 from eth_account.messages import encode_typed_data
 
 from data import (
-    SEAPORT_16, OPENSEA_CONDUIT_ADDR, OPENSEA_CONDUIT_KEY,
-    SEAPORT_COUNTER_ABI, ERC721_ABI, ERC1155_ABI
+    SEAPORT_16,SEAPORT_COUNTER_ABI, ERC721_ABI, ERC1155_ABI
 )
 
 # ---------- small helpers ----------
@@ -80,9 +79,12 @@ def _ensure_conduit_approval(
     nft_contract: str,
     is_erc1155: bool,
     private_key: str,
+    chain:str = "base",
 ) -> Optional[str]:
+    from data import get_conduit_address
+
     owner = Web3.to_checksum_address(owner)
-    operator = Web3.to_checksum_address(OPENSEA_CONDUIT_ADDR)
+    operator = Web3.to_checksum_address(get_conduit_address(chain))
     nft = w3.eth.contract(
         address=Web3.to_checksum_address(nft_contract),
         abi=ERC1155_ABI if is_erc1155 else ERC721_ABI,
@@ -108,6 +110,7 @@ def _ensure_conduit_approval(
 def _build_order_components(
     *,
     chain_id: int,
+    chain:str,
     offerer: str,
     nft_contract: str,
     token_id: int | str,
@@ -120,6 +123,8 @@ def _build_order_components(
     extra_consideration: Optional[List[Tuple[int,str]]],
     opensea_fee_bps: int = 100,   # <-- NEW: default 1% (100 bps)
 ) -> Dict[str, Any]:
+    from data import get_conduit_key
+
     offerer = Web3.to_checksum_address(offerer)
     start = _now()
     end = start + int(duration_seconds)
@@ -186,13 +191,13 @@ def _build_order_components(
         "zone": "0x0000000000000000000000000000000000000000",
         "offer": [offer_item],
         "consideration": consideration,
-        "orderType": 0,  # FULL_OPEN
+        "orderType": 0,
         "startTime": start,
         "endTime": end,
         "zoneHash": "0x" + "0"*64,
         "salt": int(salt),
-        "conduitKey": OPENSEA_CONDUIT_KEY,
-        "counter": 0,  # fill from chain
+        "conduitKey": get_conduit_key(chain),
+        "counter": 0,
     }
 
 def _opensea_post_listing(api_key: str, chain: str, parameters: Dict[str, Any], signature: str) -> Dict[str, Any]:
@@ -225,7 +230,7 @@ def create_listing(
     api_key: str,
     seller_address: str,
     seller_private_key: str,
-    chain_name: Literal["ethereum","base","polygon","arbitrum","optimism","zora"] = "base",
+    chain_name: Literal["ethereum","base","polygon","arbitrum","optimism","zora","abstract"] = "base",
     nft_contract: str,
     token_id: int | str,
     ask_price_eth: Optional[float] = None,
@@ -238,10 +243,6 @@ def create_listing(
     extra_consideration: Optional[List[Tuple[int,str]]] = None,
     auto_approve_conduit: bool = True,
 ) -> Dict[str, Any]:
-    """
-    Create a fixed-price listing on OpenSea (Seaport 1.6).
-    Returns the OpenSea response (contains order hash).
-    """
     if ask_price_wei is None and ask_price_eth is None:
         raise ValueError("Provide ask_price_wei or ask_price_eth.")
     if ask_price_wei is None:
@@ -251,10 +252,11 @@ def create_listing(
     seller = Web3.to_checksum_address(seller_address)
 
     if auto_approve_conduit:
-        _ = _ensure_conduit_approval(w3, seller, nft_contract, is_erc1155, seller_private_key)
+        _ = _ensure_conduit_approval(w3, seller, nft_contract, is_erc1155, seller_private_key, chain=chain_name)  # Pass chain
 
     params = _build_order_components(
         chain_id=w3.eth.chain_id,
+        chain=chain_name,  # Pass chain
         offerer=seller,
         nft_contract=nft_contract,
         token_id=token_id,

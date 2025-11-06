@@ -1,3 +1,7 @@
+'''
+    Public version of Opensea Bot
+'''
+
 import os
 import time
 import random
@@ -14,7 +18,6 @@ from web3 import Web3
 from web3_projects.opensea.web3_order_fulfillment import order_fullfillment
 from web3_projects.opensea.web3_create_listing import create_listing
 from web3_projects.opensea.sale_status import wait_until_sold
-from web3_projects.web3_core import AccountManager
 from web3_projects.opensea.opensea import Opensea
 
 
@@ -41,12 +44,40 @@ POLL_SECONDS = 30
 # wipe positions on every boot
 CLEAR_STATE_ON_BOOT = True
 
-# Map collection → max NFTs we are ok holding AT ONCE
+
+
+
+# Collections data
+THE_WARPLETS_FARCASTER_BASE="the-warplets-farcaster"
+DX_TERMINAL_BASE="dxterminal"
+CANIDAEBASE_BASE="canidaebase"
+PUNKISM_5_ABSTRACT="punkism-5"
+
+BASE_CHAIN="base"
+ABSTRACT_CHAIN="abstract"
+
+
+''' TO RUN COLLECTION ADD IT TO COLLECTION_TO_LIMIT AND SET LIMIT of NFTs '''
 COLLECTION_TO_LIMIT = {
-    "the-warplets-farcaster": 1
+    # PUNKISM_5_ABSTRACT:1
+    THE_WARPLETS_FARCASTER_BASE: 2
     # "canidaebase": 3,
     # "dxterminal": 1,
 }
+
+COLLECTION_TO_CHAIN = {
+    THE_WARPLETS_FARCASTER_BASE:BASE_CHAIN,
+    PUNKISM_5_ABSTRACT:ABSTRACT_CHAIN
+    
+}
+
+def get_rpc_for_chain(chain: str) -> str:
+    if chain == "base":
+        return os.environ["BASE_RPC_URL"]
+    elif chain == "abstract":
+        return os.environ["ABSTRACT_RPC_URL"]
+    else:
+        raise ValueError(f"Unknown chain: {chain}")
 
 # ERC-1155 flags
 COLLECTION_IS_ERC1155 = {
@@ -645,15 +676,10 @@ def supervise_collection(factory, name: str):
 
 # ================= MAIN =================
 def main():
-    AccountManager.setStart(2)
-    AccountManager.setEnd(2)
+    address = "YOUR_ADDRESS"
+    private_key = "YOUR_PRIVATE_KEY"
 
-    acct = AccountManager.getAccounts()[0]
-    address = acct["wallet"]["address"]
-    private_key = acct["wallet"]["private_key"]
 
-    rpc = os.environ["BASE_RPC_URL"]
-    chain_name = "base"
     api_key = os.environ["API_KEY"]
 
     # wipe old state on full process start
@@ -662,14 +688,18 @@ def main():
         logging.info("Cleared opensea_positions.json on boot")
 
     for slug, cap in COLLECTION_TO_LIMIT.items():
-        def make_factory(s=slug, c=cap):
+        chain = COLLECTION_TO_CHAIN.get(slug,"")
+        if chain == "": raise ValueError("Chain for collection is not specified")
+        rpc = get_rpc_for_chain(chain=chain)
+
+        def make_factory(s=slug, c=cap,chain_name=chain,rpc_url=rpc):
             def _factory():
                 return CollectionManager(
                     collection_slug=s,
                     limit=c,
                     taker_address=address,
                     private_key=private_key,
-                    rpc_url=rpc,
+                    rpc_url=rpc_url,
                     chain_name=chain_name,
                     api_key=api_key,
                     is_erc1155=COLLECTION_IS_ERC1155.get(s, False),

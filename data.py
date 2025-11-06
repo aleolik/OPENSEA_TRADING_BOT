@@ -6,11 +6,22 @@ from web3 import Web3
 
 SEAPORT_16 = "0x0000000000000068F116a894984e2DB1123eB395"
 
-# OpenSea conduit (operator address you approve for NFT transfers)
-OPENSEA_CONDUIT_ADDR = "0x0000a26b00c1F0DF003000390027140000fAa719"
+OPENSEA_CONDUIT_PER_CHAIN = {
+    "base": {
+        "address": "0x0000a26b00c1F0DF003000390027140000fAa719",
+        "key": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000"
+    },
+    "abstract": {
+        "address": "0x0000a26b00c1F0DF003000390027140000fAa719",  # Likely same address
+        "key": "0x61159fefdfada89302ed55f8b9e89e2d67d8258712b3a3f89aa88525877f1d5e"  # Different key!
+    }
+}
 
-# OpenSea conduit key (passed in Seaport orders)
-OPENSEA_CONDUIT_KEY = "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000"
+def get_conduit_address(chain: str) -> str:
+    return OPENSEA_CONDUIT_PER_CHAIN.get(chain, OPENSEA_CONDUIT_PER_CHAIN["base"])["address"]
+
+def get_conduit_key(chain: str) -> str:
+    return OPENSEA_CONDUIT_PER_CHAIN.get(chain, OPENSEA_CONDUIT_PER_CHAIN["base"])["key"]
 
 # ----- Minimal ABIs -----
 
