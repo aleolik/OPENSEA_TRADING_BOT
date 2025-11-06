@@ -17,4 +17,4 @@ Or yours ABSTRACT RPC
 ### address = "YOUR_ADDRESS" - Change to your address that uses OPENSEA_API_KEY
 ### private_key = "YOUR_PRIVATE_KEY"  - Change to your private_key that uses OPENSEA_API_KEY
 
-More features and chain support will be added soon.
+## More features and chain support will be added soon.
