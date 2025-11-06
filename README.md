@@ -13,8 +13,12 @@ Or yours BASE RPC
 Or yours ABSTRACT RPC
 ### ABSTRACT_CHAIN_ID=2741
 ### ABSTRACT_CONDUIT_KEY=0x61159fefdfada89302ed55f8b9e89e2d67d8258712b3a3f89aa88525877f1d5e
+
+## 
 ## in main.py
+
 ### address = "YOUR_ADDRESS" - Change to your address that uses OPENSEA_API_KEY
 ### private_key = "YOUR_PRIVATE_KEY"  - Change to your private_key that uses OPENSEA_API_KEY
 
+## 
 ## More features and chain support will be added soon.
